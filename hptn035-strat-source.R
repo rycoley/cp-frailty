@@ -1,4 +1,8 @@
-#This is 1 of 2 code files for re-creating the application analysis in Coley and Brown (2014) ``Estimating effectiveness in HIV prevention trials with a hierarchical compound Poisson frailty model"
+
+##### rycoley@gmail.com
+#####This is 1 of 2 code files for re-creating the application analysis in Coley and Brown (2014) ``Estimating effectiveness in HIV prevention trials with a hierarchical compound Poisson frailty model"
+##### part of dissertation work at University of Washington
+
 
 #This file contains the posterior log likelihoods and sampling functions for all model parameters.  
 

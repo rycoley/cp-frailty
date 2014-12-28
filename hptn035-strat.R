@@ -1,4 +1,6 @@
-#This is 2 of 2 code files for re-creating the application analysis in Coley and Brown (2014) ``Estimating effectiveness in HIV prevention trials with a hierarchical compound Poisson frailty model"
+##### rycoley@gmail.com
+#####This is 2 of 2 code files for re-creating the application analysis in Coley and Brown (2014) ``Estimating effectiveness in HIV prevention trials with a hierarchical compound Poisson frailty model"
+##### part of dissertation work at University of Washington
 
 
 #site-stratified analysis, proportional shift in hazard before 6 months
