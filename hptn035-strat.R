@@ -93,10 +93,10 @@ HD<-matrix(nrow=K, ncol=3)
 
 
 #get initial values
-rhohat<- runif(G,0.5,1) #<-rho.start
-etahat<- runif(G,1,3) #<-nu.start
-lam<- runif(G,0.05,0.15) #<-lambda.start
-bet<- 0 #<-beta.start
+rhohat<- runif(G,0.5,1) 
+etahat<- runif(G,1,3) 
+lam<- runif(G,0.05,0.15) 
+bet<- 0
 theta<-runif(1,0.15, 0.25)
 tau<-runif(1,8,16)
 lam0<-1

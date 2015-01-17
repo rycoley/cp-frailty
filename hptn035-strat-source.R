@@ -4,7 +4,7 @@
 ##### part of dissertation work at University of Washington
 
 
-#This file contains the posterior log likelihoods and sampling functions for all model parameters.  
+#This file contains the posterior log likelihoods and sampling functions for all model parameters, as well as the sampling functions for latent variables.
 
 ## This is a site-stratified analysis that assumes a piecewise constant baseline hazard (pre- and post- 6 months) for each site and compound Poisson frailty (one frailty distribution/site)
 
@@ -16,7 +16,7 @@ lik.beta<-function(bet, ch.vec, Zs, delta){#
 	return(sum(delta[Zs>0]*XB) - sum(Zs[Zs>0]*exp(XB)*ch.vec[Zs>0]) + log(dnorm(bet,0,10)) )}
 
 #slice sampler for beta
-slice.beta<-function(beta0, ch.vec, Zhat, delta){#delta, rhohat, nuhat, nor, 
+slice.beta<-function(beta0, ch.vec, Zhat, delta){ 
 	z<-J<-K<-L<-R<-beta.star<-NULL
 	z<- lik.beta(bet=beta0, ch.vec=ch.vec, Zs=Zhat, delta=delta) - rexp(1,1) #want to make a slice with all betas that have a log-likelihood above this
 	w<- 0.05 #width of each step
@@ -37,7 +37,7 @@ slice.beta<-function(beta0, ch.vec, Zhat, delta){#delta, rhohat, nuhat, nor,
 	return(beta.star)}
 
 ##see paper for definition of baseline hazard
-#sample constant baseline hazard for time>6 months for each site, lambda[j]
+#sample constant baseline hazard for time>6 months for each site, lambda[g]
 #posterior is gamma when prior(lambda)~gamma
 get.lambda<-function(deltas, Xs, Zs, bet, Ys, lam0, theta, rho, tau){
 	shape<- sum(deltas) + (tau*theta*(1-exp(-rho)))
@@ -52,21 +52,22 @@ get.lambda0<-function(deltas,Xs,Zs,bet,Ys,lam.vec,lam0.s,lam0.r){
 	return(rgamma(1, shape=shape, rate=rate))}
 
 
-#log prior density for number of exposure processes for individuals in site j, rho[j]
-#prior(1-exp(-rho[j]))) ~ beta(A,B)
+#log prior density for mean number of exposure processes for individuals in site j, rho[g]
+#prior(PNR=1-exp(-rho[g]))) ~ beta(A[g],B[g])
+#note different parameterization than paper (paper uses proportion at risk)
 #here, rho.a=A, rho.b=B  
-ldrho<-function(rhoh, rho.a,rho.b){ #log likelihood of prior #this is for proprotion not at risk
+ldrho<-function(rhoh, rho.a,rho.b){ 
 	return(-rho.a*rhoh + (rho.b-1)*log(1-exp(-rhoh)))}
 
-#log-posterior likelihood for each rho[j]
+#log-posterior likelihood for each rho[g]
 lik.rho<-function(rhoh, g, eta, Ns, Zs, rho.a, rho.b, theta, tau, lam.g){
 	nu<-rhoh*eta
 	A<-tau*theta*(1-exp(-rhoh))
 	return(-(n.site[g]*rhoh)+ sum(Ns[Ns>0]*log(rhoh)) + sum(Ns[Ns>0]*eta*log(nu))   -sum(Zs[Zs>0]*nu) + ldrho(rhoh=rhoh, rho.a, rho.b) + A*log(tau) - lgamma(A) + A*log(lam.g) )}
 
-#slice sampler for each rho[j]
-#comparable to slice.beta. see notes there for more details on function
-slice.rho<-function(rho0, eta, Nhat, Zhat, rho.a, rho.b, theta, tau, lam){#delta, nuhat, lexbT, 
+#slice sampler for each rho[g]
+#comparable to slice.beta above. see notes there for more details on function
+slice.rho<-function(rho0, eta, Nhat, Zhat, rho.a, rho.b, theta, tau, lam){ 
 	for(g in 1:G){
 	z<-J<-K<-L<-R<-rho.star<-NULL
 	rho.star<-rho0
@@ -94,15 +95,15 @@ slice.rho<-function(rho0, eta, Nhat, Zhat, rho.a, rho.b, theta, tau, lam){#delta
 		rho0<-rho.star}
 	return(rho.star)	}
 
-#log-posterior likelihood for eta[j], the site-specific shape parameter of the gamma random variable for amount of risk associated with each exposure process 
-#prior(eta[j])~Gamma(O_{eta[j]}, T_{eta[j]}) = Gamma(eta.s, eta.r)
+#log-posterior likelihood for eta[g], the site-specific shape parameter of the gamma random variable for amount of risk associated with each exposure process 
+#prior(eta[g])~Gamma(O_{eta[g]}, T_{eta[g]}) = Gamma(eta.s[g], eta.r[g])
 lik.eta<-function(etah, rho, Ns, Zs, eta.s, eta.r){
 	nu<-rho*etah
 	return(sum(Ns[Ns>0]*etah*log(nu)) - sum(lgamma(Ns[Ns>0]*etah)) + sum(Ns[Zs>0]*etah*log(Zs[Zs>0])) -sum(Zs[Zs>0]*nu) + log(dgamma(etah, shape=eta.s, rate=eta.r)) )}
 
-#slice sampler for each eta[j]
-#comparable to slice.beta. see notes there for more details on function
-slice.eta<-function(eta0, rho, Nhat, Zhat, eta.s, eta.r){#rhohat, delta,  lexbT, 
+#slice sampler for each eta[g]
+#comparable to slice.beta above. see notes there for more details on function
+slice.eta<-function(eta0, rho, Nhat, Zhat, eta.s, eta.r){ 
 	for(g in 1:G){
 	z<-J<-K<-L<-R<-eta.star<-NULL
 	eta.star<-eta0
@@ -133,8 +134,8 @@ lik.theta<-function(theta, rhoh, tau, lam, theta.s, theta.r){
 	return( sum(A*log(tau)) - sum(lgamma(A)) + sum(A*log(lam)) + log(dgamma(theta, shape=theta.s, rate=theta.r)))}
 
 #slice sampling function for theta
-#comparable to slice.beta. see notes there for more details on function
-slice.theta<-function(theta, rhoh, tau, lam, theta.s, theta.r){#rhohat, delta,  lexbT, 
+#comparable to slice.beta above. see notes there for more details on function
+slice.theta<-function(theta, rhoh, tau, lam, theta.s, theta.r){
 	z<-J<-K<-L<-R<-theta.star<-NULL
 	z<- lik.theta(theta=theta, rhoh=rhoh, tau=tau, lam=lam, theta.s=theta.s, theta.r=theta.r) -rexp(1,1) 
 	w<- 0.01
@@ -156,15 +157,15 @@ slice.theta<-function(theta, rhoh, tau, lam, theta.s, theta.r){#rhohat, delta,  
 		theta.star<- runif(1,L,R)}
 	return(theta.star)	}	
 
-#log-posterior likelihood for the rate parameter for the gamma prior on all lambda[j], as explained in Application section of paper
+#log-posterior likelihood for the rate parameter for the gamma prior on all lambda[g], as explained in Application section of paper
 #prior(tau)~Inverse Gamma(tau.a, tau.b)
 lik.tau<-function(tau, theta, rhoh, lam, tau.a, tau.b){
 	A<-tau*theta*(1-exp(-rhoh))
 	return(sum(A*log(tau)) -sum(lgamma(A)) + sum(A*log(lam)) - sum(tau*lam) + (-tau.a-1)*log(tau) - (tau.b/tau))}
 
 #slice sampler for tau
-#comparable to slice.beta. see notes there for more details on function
-slice.tau<-function(tau0, theta, rhoh, lam, tau.a, tau.b){#rhohat, delta,  lexbT, 
+#comparable to slice.beta above. see notes there for more details on function
+slice.tau<-function(tau0, theta, rhoh, lam, tau.a, tau.b){ 
 	z<-J<-K<-L<-R<-tau.star<-NULL
 	z<- lik.tau(tau=tau0, theta=theta, rhoh=rhoh, lam=lam, tau.a=tau.a, tau.b=tau.b) -rexp(1,1) 
 	w<- 0.2
@@ -312,6 +313,7 @@ get.surv.q<-function(Y.q,delta){
 			else{if(j==1){km.surv[j]<-1}
 				else{km.surv[j]<-km.surv[(j-1)]}}}
 				return(km.surv)}}
+
 #kaplan meier survival for event times (in quarters) within treatment arm
 get.surv.tx.q<-function(Y.q,delta){
 	so<-Surv(time=Y.q, event=delta)
@@ -323,7 +325,7 @@ get.surv.tx.q<-function(Y.q,delta){
 		surv.mat[,2]<-get.surv.q(Y.q[X==1], delta[X==1])
 		return(surv.mat)} }
 
-#calculate density for discrete time from survival
+#calculate density for discrete time from survival function
 get.surv.pdf<-function(cdf){
 	pdf<-rep(0,(Tf+1))
 	pdf[1]<-1-cdf[1]
@@ -355,7 +357,7 @@ get.prob.cens<-function(delta, Y){
 	return(prob.cens)}	
 
 #calculate hellinger distance
-get.HD<-function(p,q){ #hellinger distance
+get.HD<-function(p,q){ 
 	hd<-rep(0,ncol(p))
 	for(j in 1:ncol(p)){
 		hd[j]<-(1/sqrt(2)) * sqrt( sum( (sqrt(p[,j])-sqrt(q[,j]))^2 ) )}
