@@ -203,5 +203,7 @@ get.yrep.surv<-function(bet, lam, rhohat, etahat, ER, pdf.true, Tf, Tf.mo){
 	
 	return(HD)}
 
+
 cover<-function(x,true){
-	return(c(quantile(x,p=0.025), quantile(x,p=0.975), quantile(x,p=0.025)<true & quantile(x,p=0.975)>true))}
+	hpd<-HPDinterval(as.mcmc(x))
+	return(c(hpd[1,1], hpd[1,2], as.numeric(hpd[1,1]<true & hpd[1,2]>true) ))}

@@ -7,15 +7,12 @@
 
 #This file runs a single simulation, including data generation based on random seed and runs gibbs sampler to get parameter estimate
 
-#function is similar to that defined in cpe-to-run.R, see there for annotated code
-
-library(compiler)
-enableJIT(1)
-
-library(survival)
+#similar to cpe-to-run.R. See that script for more exhaustive annotation
 
 do.one<-function(seed){
 
+
+###set parameter values
 true.rho<-rho
 
 true.lam<-lambda<-0.05
@@ -24,8 +21,8 @@ true.bet<-beta<-log(0.5)
 true.eta<-eta<-2
 nu<-rho*eta
 
+### generate data
 set.seed(seed)
-#set.seed(1)
 
 N<-rep(0,n) 
 for(i in 1:n){N[i]<-rpois(1,rho)}
@@ -43,6 +40,10 @@ delta<-rep(0,n)
 delta[Y<=Tf]<-1		
 Y[Y>Tf]<-Tf
 
+rho<-eta<-lambda<-beta<-NULL
+N<-Z<-NULL
+
+### get true hazard function, to use to calculate HD
 Tf.mo<-c(1:length(months))[months==min(months[Tf<months])]
 
 pdf.true<-get.surv.pdf(cdf=get.surv.mo(Y=get.ymo(Y, Tf.mo=Tf.mo),delta=delta, Tf.mo=Tf.mo), Tf.mo=Tf.mo)
@@ -53,15 +54,15 @@ keep<-seq(A,B,ke)
 K<-length(keep)
 
 rho.mat<-eta.mat<-lambdas<-betas<-vector(length=K)
+Nhat<-Zhat<-vector(length=n)
+HD<-vector(length=K)
+
+
 rhohat<- runif(1,0.5,1) 
 etahat<- runif(1,1,3) 
 lam<- runif(1,0.025,0.075) 
 bet<- 0 
 
-rho<-eta<-lambda<-beta<-NULL
-
-Nhat<-Zhat<-vector(length=n)
-N<-Z<-NULL
 
 pk0<- woah(rhoi=rhohat, etai=etahat, lexbi=lam, Yi=Tf)
 pk1<- woah(rhoi=rhohat, etai=etahat, lexbi=(lam*exp(bet)), Yi=Tf)
@@ -70,7 +71,6 @@ pk1<- woah(rhoi=rhohat, etai=etahat, lexbi=(lam*exp(bet)), Yi=Tf)
 		Nhat[i]<-NiZi$Nc
 		Zhat[i]<-NiZi$Zc}
 
-HD<-vector(length=K)
 
 for(j in 2:B){
 		
@@ -87,9 +87,6 @@ for(j in 2:B){
 		
 	lam<-get.lambda(delta=delta, Zs=Zhat, bet=bet, Y=Y)
 	bet<-slice.beta(beta0=bet, lam=lam, Zhat=Zhat, delta=delta, Y=Y)
-
-	
-		if(j%in%seq(1,A,ke)){print(j)}
 
 
 		if(j %in%keep){print(j)
@@ -110,10 +107,7 @@ eta.res<-c(median(eta.mat), cover(x=eta.mat, true=true.eta))
 HD<-quantile(HD,p=c(0.5, 0.025, 0.975))
 
 
-results<-list(bet.res=bet.res, lam.res=lam.res, rho.res=rho.res, eta.res=eta.res, HD=HD, seed=seed) #, mZ=mZ
-
-#write.csv(c(read.csv(paste("status-",PNR,"-",ER,".csv",sep="")),seed), paste("status-",PNR,"-",ER,".csv",sep=""))
-print(c(seed,"completed"))
+results<-list(bet.res=bet.res, lam.res=lam.res, rho.res=rho.res, eta.res=eta.res, HD=HD, seed=seed) 
 
 return(results)}
 

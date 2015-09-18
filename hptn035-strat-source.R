@@ -10,7 +10,7 @@
 
 #log-posterior likelihood for parameter in proportional hazards function (beta)
 #in application, hazard ratio associated with intervention
-#prior(beta)~N(0,10) 
+#prior(beta)=N(0,10) 
 lik.beta<-function(bet, ch.vec, Zs, delta){#
 	XB<-X[Zs>0]*bet
 	return(sum(delta[Zs>0]*XB) - sum(Zs[Zs>0]*exp(XB)*ch.vec[Zs>0]) + log(dnorm(bet,0,10)) )}
@@ -38,7 +38,7 @@ slice.beta<-function(beta0, ch.vec, Zhat, delta){
 
 ##see paper for definition of baseline hazard
 #sample constant baseline hazard for time>6 months for each site, lambda[g]
-#posterior is gamma when prior(lambda)~gamma
+#posterior is gamma when prior(lambda)=gamma
 get.lambda<-function(deltas, Xs, Zs, bet, Ys, lam0, theta, rho, tau){
 	shape<- sum(deltas) + (tau*theta*(1-exp(-rho)))
 	rate<- sum(Zs[Ys<=0.5] * exp(as.vector(Xs[Ys<=0.5]*bet)) * lam0 * Ys[Ys<=0.5]) + sum(Zs[Ys>0.5] * exp(as.vector(Xs[Ys>0.5]*bet)) * (0.5*lam0 + (Ys[Ys>0.5] - 0.5))) + tau
@@ -52,8 +52,8 @@ get.lambda0<-function(deltas,Xs,Zs,bet,Ys,lam.vec,lam0.s,lam0.r){
 	return(rgamma(1, shape=shape, rate=rate))}
 
 
-#log prior density for mean number of exposure processes for individuals in site j, rho[g]
-#prior(PNR=1-exp(-rho[g]))) ~ beta(A[g],B[g])
+#log prior density for mean number of exposure processes for individuals in site g, rho[g]
+#prior(PNR=1-exp(-rho[g]))) = beta(A[g],B[g])
 #note different parameterization than paper (paper uses proportion at risk)
 #here, rho.a=A, rho.b=B  
 ldrho<-function(rhoh, rho.a,rho.b){ 
@@ -200,7 +200,7 @@ pN<-function(given){
 
 #metropolis-hastings algorithm to sample N[i], the number of exposure processes for participant i
 MH.Ni<-function(N0, rhoi, etai, chexbi){
-	U<-runif(1,0,1) #sample candidate, conditional on obesrved event
+	U<-runif(1,0,1) #sample candidate, conditional on observed event
 	if(N0>1){ 
 		if(U < 1/3 ){Nc<- N0-1 }
 		if(U > 1/3 & U < 2/3){Nc<- N0

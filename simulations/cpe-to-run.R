@@ -3,21 +3,16 @@
 ##### part of dissertation work at University of Washington
 
 #For estimation with informative priors (however vague)
-#Accompanies cpe-cpt.R and cpe-source.R for correct priors,
-#cpe-cpt2.R for incorrect priors on lambda, correct prior on PNR
+#Accompanies cpe-cpt.R and cpe-source.R for correct priors, as well as cpe-cpt1.R and cpe-cpt2.R for mispecified priors
 
 #This file runs a single simulation, including data generation based on random seed and runs gibbs sampler to get parameter estimate
 
-library(compiler)
-enableJIT(1)
-
-library(survival)
 
 do.one<-function(seed){
 	
-print(c(seed,"assigned")) #for monitoring 
 
-#parameter set from cpe-cpt.R, cpe-cpt2.R
+###set parameter values
+
 true.rho<-rho
 
 #set lambda
@@ -28,8 +23,9 @@ true.bet<-beta<-log(0.5)
 true.eta<-eta<-2
 nu<-rho*eta
 
-set.seed(seed)
 
+### generate data
+set.seed(seed)
 
 N<-rep(0,n) #number of risk processes
 for(i in 1:n){N[i]<-rpois(1,rho)}
@@ -47,27 +43,33 @@ delta<-rep(0,n) #event indicator
 delta[Y<=Tf]<-1		
 Y[Y>Tf]<-Tf
 
+rho<-eta<-lambda<-beta<-NULL
+N<-Z<-NULL
+
+### get true hazard function, to use to calculate HD
+#we want to compare observed and predicted survival up to Tf.mo
 Tf.mo<-c(1:length(months))[months==min(months[Tf<months])] #round event times to months
 
-
+#hazard function for observed data
 pdf.true<-get.surv.pdf(cdf=get.surv.mo(Y=get.ymo(Y, Tf.mo=Tf.mo),delta=delta, Tf.mo=Tf.mo), Tf.mo=Tf.mo) #pdf for observed event months
 
 
 ### GIBB'S SAMPLER
+
+#set-up vectors/matrices for storing sampled values
 keep<-seq(A,B,ke)
 K<-length(keep)
 
-#initial values
 rho.mat<-eta.mat<-lambdas<-betas<-vector(length=K)
+Nhat<-Zhat<-vector(length=n)
+HD<-vector(length=K)
+
+#initial values
 rhohat<- runif(1,0.5,1) 
 etahat<- runif(1,1,3) 
 lam<- runif(1,0.025,0.075) 
 bet<- 0 
 
-rho<-eta<-lambda<-beta<-NULL
-
-Nhat<-Zhat<-vector(length=n)
-N<-Z<-NULL
 
 pk0<- woah(rhoi=rhohat, etai=etahat, lexbi=lam, Yi=Tf)
 pk1<- woah(rhoi=rhohat, etai=etahat, lexbi=(lam*exp(bet)), Yi=Tf)
@@ -75,7 +77,7 @@ pk1<- woah(rhoi=rhohat, etai=etahat, lexbi=(lam*exp(bet)), Yi=Tf)
 	for(i in 1:n){NiZi<-get.NiZi(deltai=delta[i], X=X[i], pk0=pk0, pk1=pk1, rhoi=rhohat, etai=etahat, lexbi=lam*exp(X[i]*bet), Yi=Y[i], N0=1)
 		Nhat[i]<-NiZi$Nc
 		Zhat[i]<-NiZi$Zc}
-HD<-vector(length=K)
+
 
 #run sampling algorithm
 for(j in 2:B){
@@ -116,11 +118,6 @@ HD<-quantile(HD,p=c(0.5, 0.025, 0.975))
 
 #compile results to send back to master node
 results<-list(bet.res=bet.res, lam.res=lam.res, rho.res=rho.res, eta.res=eta.res, HD=HD, seed=seed)
-
-#uncomment to save results for each seed in case there is a problem with multicore
-#write.csv(c(read.csv(paste("status-",PNR,"-",ER,".csv",sep="")),seed), paste("status-",PNR,"-",ER,".csv",sep=""))
-
-print(c(seed,"completed"))
 
 return(results)}
 
